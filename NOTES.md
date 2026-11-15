@@ -164,7 +164,7 @@
     管理者権限なしで `%LOCALAPPDATA%\Programs\SR-MK1 for PC` に入る。スタートメニュー、デスクトップ (任意)、
     アンインストールに対応。設定と履歴 (`%APPDATA%\SR-MK1 for PC`) はアンインストールしても残る
   - `SR-MK1-for-PC-<版>-portable.zip` インストールしない版
-- ビルド用の Python 環境は `.venv` (git に入れない): `python -m venv .venv` → `.venv\Scripts\pip install -r requirements.txt pyinstaller`
+- ビルド用の Python 環境は `.venv` (git に入れない): `python -m venv .venv` → `.venv\Scripts\pip install -r packaging\requirements-build.txt` (版を固定。Actions も同じ)
 - Inno Setup は `winget install JRSoftware.InnoSetup --scope user` で入れた (日本語の画面あり)
 - build.ps1 と installer.iss は日本語を含むので UTF-8 (BOM 付き) で保存する (BOM がないと Windows PowerShell 5 が文字化けする)
 - 版の番号は `app/version.py` の 1 か所だけ (exe のプロパティ・インストーラー名に使う)
