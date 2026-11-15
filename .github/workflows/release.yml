@@ -1,0 +1,63 @@
+# v で始まるタグ (例: v0.9.0) を push すると、Windows で exe・インストーラー・zip を作り、
+# GitHub の Releases に公開する。0.x の版はベータ版 (プレリリース) として出す。
+# 「Actions」タブから手動で動かすと、作るだけ (Releases には出さず、成果物として残す)。
+name: リリース
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: 必要なものを入れる
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r packaging/requirements-build.txt
+          if (-not (Test-Path "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe")) {
+            choco install innosetup -y --no-progress
+          }
+
+      - name: タグと版の番号が合っているか確かめる
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          $v = python -c "import sys; sys.path.insert(0, 'app'); from version import VERSION; print(VERSION)"
+          if ("v$v" -ne "${{ github.ref_name }}") {
+            throw "タグ ${{ github.ref_name }} と app/version.py の版 $v が違います"
+          }
+
+      - name: ビルド
+        run: ./packaging/build.ps1
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: |
+            dist/*.exe
+            dist/*.zip
+
+      - name: Releases に公開する
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = "${{ github.ref_name }}"
+          $v = $tag.TrimStart("v")
+          $files = (Get-ChildItem dist -File | Where-Object { $_.Extension -in ".exe", ".zip" }).FullName
+          $opts = @("--title", "SR-MK1 for PC $v", "--notes-file", "packaging/release-notes.md")
+          if ($v.StartsWith("0.")) { $opts += "--prerelease" }
+          gh release create $tag @files @opts

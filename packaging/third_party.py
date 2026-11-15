@@ -63,9 +63,10 @@ def main() -> None:
                          "BSD スタイルのライセンス (Microsoft)", "https://www.nuget.org/packages/Microsoft.Web.WebView2",
                          (ROOT / "packaging" / "licenses" / "Microsoft.Web.WebView2-LICENSE.txt").read_text(encoding="utf-8")))
     py_license = Path(sys.base_prefix) / "LICENSE.txt"
+    py_text = py_license.read_text(encoding="utf-8", errors="replace") if py_license.exists() else None
     parts.append(section("Python", sys.version.split()[0],
                          "Python Software Foundation License (OpenSSL・libffi・bzip2・xz・zlib などのライセンスを含む)",
-                         "https://www.python.org/", py_license.read_text(encoding="utf-8", errors="replace")))
+                         "https://docs.python.org/3/license.html", py_text))
     parts.append(section("PyInstaller (起動用プログラム)", md.version("pyinstaller"),
                          "GPL 2.0 以降 (例外条項つき)", "https://pyinstaller.org/",
                          "PyInstaller の起動用プログラム (bootloader) は、例外条項により、作られたプログラムを\n"

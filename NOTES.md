@@ -195,3 +195,10 @@
 - リポジトリ: https://github.com/yas0ka/sr-mk1-for-pc (`app/version.py` の REPO_URL)。Issue のひな形は `.github/ISSUE_TEMPLATE/`
 - 公開用の履歴は新しく始めた (ブランチ main、作者は GitHub の noreply アドレス)。
   開発中の履歴はローカルのブランチ `dev-history` にだけ残す (push しない。push するのは main だけ)
+
+## 配布の準備 段階 E (公開)
+
+- `.github/workflows/release.yml`: `v<版>` のタグを push すると、GitHub の Windows でビルドして Releases に公開する。
+  0.x の版はプレリリース (ベータ版)。タグと `app/version.py` の版が違うと止まる。手動で動かすとビルドだけ
+- リリースの説明文は `packaging/release-notes.md`
+- 新しい版を出す手順: `app/version.py` の VERSION を上げる → コミット → `git tag v<版>` → `git push origin main v<版>`

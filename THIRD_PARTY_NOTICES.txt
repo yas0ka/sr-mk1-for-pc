@@ -2216,7 +2216,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ==============================================================================
 Python 3.11.9
 ライセンス: Python Software Foundation License (OpenSSL・libffi・bzip2・xz・zlib などのライセンスを含む)
-URL: https://www.python.org/
+URL: https://docs.python.org/3/license.html
 ------------------------------------------------------------------------------
 A. HISTORY OF THE SOFTWARE
 ==========================
