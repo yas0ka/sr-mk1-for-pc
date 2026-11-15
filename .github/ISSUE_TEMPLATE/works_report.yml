@@ -1,0 +1,36 @@
+name: 動作の報告 (うまく動いた)
+description: 確かめていない環境・テープで動いたかどうかを教えてください
+labels: ["動作報告"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        作者は SR-MK1 1 台・Windows 11・12mm と 24mm テープでしか確かめていません。
+        ほかの環境での「動いた」「動かなかった」の報告は、とても助かります。
+  - type: dropdown
+    id: result
+    attributes:
+      label: 結果
+      options: ["問題なく動いた", "一部うまくいかなかった", "動かなかった"]
+    validations:
+      required: true
+  - type: input
+    id: windows
+    attributes:
+      label: Windows
+      placeholder: 例) Windows 11 / Windows 10
+  - type: input
+    id: bt
+    attributes:
+      label: Bluetooth
+      placeholder: 例) 内蔵 / USB アダプタ (製品名)
+  - type: input
+    id: tape
+    attributes:
+      label: 使ったテープ
+      placeholder: 例) 9mm、18mm
+  - type: textarea
+    id: notes
+    attributes:
+      label: 気づいたこと
+      description: 縦置きラベルの向き、バーコードが読めたか、長さのずれ (寸法の補正の値) など

@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: 困ったとき (よくある質問)
+    url: https://github.com/yas0ka/sr-mk1-for-pc/blob/main/docs/faq.md
+    about: つながらない・警告が出る・印刷が止まった など、まずはこちらをご覧ください。

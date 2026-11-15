@@ -1,0 +1,41 @@
+name: 不具合の報告
+description: うまく動かない・エラーが出る・印刷がおかしい
+labels: ["不具合"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        報告ありがとうございます。先に [困ったとき](https://github.com/yas0ka/sr-mk1-for-pc/blob/main/docs/faq.md) も見てみてください。
+        このアプリは非公式です。キングジムには問い合わせないでください。
+  - type: textarea
+    id: what
+    attributes:
+      label: 何をしたら、何が起きましたか
+      description: 押したボタンや、出てきたメッセージをそのまま書いてください。画面の写真があると助かります。
+      placeholder: |
+        例) 「印刷」を押したら「1 枚目で止まりました。…」と出て、ラベルが出てこない
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: どうなってほしかったですか
+  - type: textarea
+    id: diag
+    attributes:
+      label: 診断情報
+      description: アプリの「設定」→「困ったとき」→「診断情報をコピー」を押して、ここに貼り付けてください。
+      render: text
+    validations:
+      required: true
+  - type: input
+    id: bt
+    attributes:
+      label: Bluetooth
+      description: パソコン内蔵か、USB アダプタ (分かれば製品名) か
+      placeholder: 例) 内蔵 / TP-Link UB400
+  - type: input
+    id: tape
+    attributes:
+      label: テープの幅
+      placeholder: 例) 12mm

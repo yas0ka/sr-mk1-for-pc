@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# ビルド成果物 (PyInstaller など)
+build/
+dist/
+
+# 実行時に生成されるファイル
+preview.png
+
+# エディタ・OS
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
+
+# ビルドのログ
+build-log.txt
+
+# 開発用のメモ・ツール設定 (公開しない)
+FEATURES.md
+.claude/

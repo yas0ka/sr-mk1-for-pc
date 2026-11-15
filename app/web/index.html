@@ -1,0 +1,479 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SR-MK1 for PC</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <h1>SR-MK1 for PC</h1>
+    <div class="tgroup files">
+      <button id="btn-new" title="新しいファイル">新規</button>
+      <button id="btn-open" title="ファイルを開く (Ctrl+O)">開く</button>
+      <button id="btn-save" title="上書き保存 (Ctrl+S)">保存</button>
+      <button id="btn-saveas" title="名前を付けて保存">名前を付けて保存</button>
+      <span id="file-name" class="file-name">未保存</span>
+    </div>
+    <button id="btn-history" class="ghost" title="印刷履歴">履歴</button>
+    <button id="status" class="status" title="">
+      <span class="dot"></span><span id="status-text">確認中…</span>
+    </button>
+    <button id="btn-refresh" class="ghost" title="プリンタの状態を今すぐ確認">更新</button>
+    <button id="btn-settings" class="ghost" title="プリンタ・寸法の補正・困ったとき・このアプリについて">設定</button>
+  </header>
+
+  <!-- 画面の部品が Python とつながるまでの表示 -->
+  <div id="boot-msg" class="boot-msg" hidden>
+    <p><strong>画面の準備に時間がかかっています。</strong></p>
+    <p>しばらく待っても変わらないときは、アプリを閉じて開き直してください。</p>
+  </div>
+
+  <div class="toolbar" role="toolbar" aria-label="部品の追加と編集">
+    <div class="tgroup">
+      <span class="tlabel">追加</span>
+      <button data-add="text" title="文字ブロックを追加 (T)">文字</button>
+      <button data-add="rect" title="四角を追加">四角</button>
+      <button data-add="ellipse" title="丸を追加">丸</button>
+      <button data-add="line" title="線を追加">線</button>
+      <button data-add="image" title="画像ファイルを追加">画像</button>
+      <button data-add="code" title="QR コード / バーコードを追加">コード</button>
+      <button data-add="table" title="表を追加">表</button>
+    </div>
+    <div class="tgroup">
+      <button id="btn-undo" title="元に戻す (Ctrl+Z)">↶ 元に戻す</button>
+      <button id="btn-redo" title="やり直し (Ctrl+Y)">↷ やり直し</button>
+    </div>
+    <div class="tgroup push">
+      <label>表示
+        <select id="zoom">
+          <option value="fit">画面に合わせる</option>
+          <option value="real">実寸</option>
+          <option value="2">2 倍</option>
+          <option value="4">4 倍</option>
+        </select>
+      </label>
+    </div>
+    <input type="file" id="file-image" accept="image/*" hidden>
+  </div>
+
+  <main class="layout">
+    <section class="stage">
+      <div class="tabs" role="tablist" aria-label="ラベル">
+        <div id="tabs" class="tablist"></div>
+        <button id="tab-add" title="ラベルを追加">＋ ラベル</button>
+        <button id="tab-flag" title="ケーブルに巻いて旗にするラベルを追加">＋ フラッグラベル</button>
+        <span class="tab-actions">
+          <button id="tab-dup" title="このラベルを複製">複製</button>
+          <button id="tab-left" title="前へ移動">◀</button>
+          <button id="tab-right" title="後ろへ移動">▶</button>
+          <button id="tab-del" title="このラベルを削除">削除</button>
+        </span>
+      </div>
+      <div id="viewport" class="viewport">
+        <div class="canvas-wrap"><canvas id="editor"></canvas></div>
+      </div>
+      <div class="printview">
+        <div class="printview-head">
+          <strong>印刷イメージ</strong>
+          <span id="info" class="info"></span>
+        </div>
+        <div class="printview-strip"><canvas id="print-preview"></canvas></div>
+        <p id="warn" class="warn" hidden></p>
+      </div>
+    </section>
+
+    <aside class="panel">
+      <!-- 選択中の部品 -->
+      <section id="p-none" class="psec">
+        <p class="hint">部品をクリックすると、ここで設定を変えられます。上の「追加」から文字・図形・画像・コード・表を置けます。</p>
+      </section>
+
+      <section id="p-arrange" class="psec" hidden>
+        <h2 id="sel-title">選択中</h2>
+        <div class="grid4">
+          <button data-act="duplicate" title="複製 (Ctrl+D)">複製</button>
+          <button data-act="remove" title="削除 (Delete)">削除</button>
+          <button data-act="rotate90" title="90 度回転">回転</button>
+          <button data-act="lock" title="ロック / 解除">ロック</button>
+          <button data-act="flipX" title="左右反転">左右反転</button>
+          <button data-act="flipY" title="上下反転">上下反転</button>
+          <button data-act="group" title="グループ化 (Ctrl+G)">グループ</button>
+          <button data-act="ungroup" title="グループ解除 (Ctrl+Shift+G)">解除</button>
+          <button data-act="front" title="最前面へ">最前面</button>
+          <button data-act="forward" title="前面へ">前面</button>
+          <button data-act="backward" title="背面へ">背面</button>
+          <button data-act="back" title="最背面へ">最背面</button>
+        </div>
+        <div class="sub">揃え <span class="hint" id="align-hint">(ラベルに対して)</span></div>
+        <div class="grid6">
+          <button data-align="left" title="左揃え">⇤</button>
+          <button data-align="hcenter" title="左右中央">↔</button>
+          <button data-align="right" title="右揃え">⇥</button>
+          <button data-align="top" title="上揃え">⤒</button>
+          <button data-align="vcenter" title="上下中央">↕</button>
+          <button data-align="bottom" title="下揃え">⤓</button>
+        </div>
+      </section>
+
+      <section id="p-text" class="psec" hidden>
+        <h2>文字</h2>
+        <textarea id="t-text" rows="3" spellcheck="false"></textarea>
+        <div class="insert-row" id="t-insert"></div>
+        <details class="symbols">
+          <summary>記号・絵文字</summary>
+          <div id="symbols" class="symgrid"></div>
+        </details>
+        <label class="row">書体 <select id="t-font"></select></label>
+        <div class="row">
+          <label class="check"><input type="checkbox" id="t-autoFit"> サイズ自動</label>
+          <span class="inline"><input type="number" id="t-sizePt" min="4" max="300" step="1"> pt</span>
+        </div>
+        <div class="toggles" role="group" aria-label="文字スタイル">
+          <button class="tog" data-tkey="bold" title="太字"><b>B</b></button>
+          <button class="tog" data-tkey="italic" title="斜体"><i>I</i></button>
+          <button class="tog" data-tkey="underline" title="下線"><u>U</u></button>
+          <button class="tog" data-tkey="strike" title="取り消し線"><s>S</s></button>
+          <button class="tog" data-tkey="dstrike" title="二重取り消し線"><span class="dstrike">S</span></button>
+        </div>
+        <div class="seg" data-tkey="align" role="group" aria-label="揃え">
+          <button data-val="left">左</button><button data-val="center">中央</button>
+          <button data-val="right">右</button><button data-val="justify">均等</button>
+        </div>
+        <label class="row">装飾
+          <select id="t-deco">
+            <option value="none">なし</option>
+            <option value="emph">縁強調</option>
+            <option value="hollow">白抜き</option>
+            <option value="outline">縁取り</option>
+            <option value="light">淡文字</option>
+          </select>
+        </label>
+        <div class="row">
+          <label class="check"><input type="checkbox" id="t-vertical"> 縦書き</label>
+          <label class="check" title="オフにすると枠の長さを固定します (枠を引き伸ばしても固定になります)">
+            <input type="checkbox" id="t-autoLen"> 枠を文字に合わせる</label>
+        </div>
+      </section>
+
+      <section id="p-shape" class="psec" hidden>
+        <h2 id="shape-title">図形</h2>
+        <label class="row">線の太さ <span class="inline"><input type="number" id="s-width" min="0" max="10" step="0.1"> mm</span></label>
+        <div class="seg" data-skey="lineStyle" role="group" aria-label="線の種類">
+          <button data-val="solid">実線</button><button data-val="dashed">破線</button><button data-val="dotted">点線</button>
+        </div>
+        <div class="seg" data-skey="fill" id="s-fill" role="group" aria-label="塗り">
+          <button data-val="transparent">塗りなし</button><button data-val="#000">黒で塗る</button>
+        </div>
+        <label class="row" id="s-round-row">角の丸み <span class="inline"><input type="number" id="s-round" min="0" max="20" step="0.5"> mm</span></label>
+      </section>
+
+      <section id="p-image" class="psec" hidden>
+        <h2>画像</h2>
+        <div class="seg" data-ikey="mode" role="group" aria-label="白黒の方法">
+          <button data-val="threshold">しきい値</button><button data-val="dither">網点 (写真向き)</button>
+        </div>
+        <label class="row" id="i-level-row">濃さ <input type="range" id="i-level" min="20" max="240" step="5"></label>
+      </section>
+
+      <section id="p-code" class="psec" hidden>
+        <h2>コード</h2>
+        <label class="row">種類 <select id="c-type"></select></label>
+        <label class="col">内容 <input type="text" id="c-value" spellcheck="false"></label>
+        <div class="insert-row" id="c-insert"></div>
+        <p id="c-error" class="warn small" hidden></p>
+        <label class="row">太さ (1 本の幅) <span class="inline"><input type="number" id="c-module" min="1" max="20" step="1"> ドット</span></label>
+        <label class="row" id="c-height-row">高さ <span class="inline"><input type="number" id="c-height" min="2" max="30" step="0.5"> mm</span></label>
+        <label class="check" id="c-text-row"><input type="checkbox" id="c-showText"> 数字を表示</label>
+        <p class="hint">読み取れるか、印刷後にバーコードリーダーやスマホで確かめてください。</p>
+      </section>
+
+      <section id="p-table" class="psec" hidden>
+        <h2>表</h2>
+        <div class="row">
+          <span class="inline">行 <input type="number" id="tb-rows" min="1" max="10" step="1"></span>
+          <span class="inline">列 <input type="number" id="tb-cols" min="1" max="20" step="1"></span>
+        </div>
+        <label class="row">罫線の太さ <span class="inline"><input type="number" id="tb-line" min="0.1" max="2" step="0.1"> mm</span></label>
+        <label class="row">書体 <select id="tb-font"></select></label>
+        <label class="check"><input type="checkbox" id="tb-bold"> 太字</label>
+        <div id="tb-cells" class="cells"></div>
+      </section>
+
+      <!-- フラッグラベルの設定 (ひな形のラベルのときだけ) -->
+      <section id="p-flag" class="psec" hidden>
+        <h2>フラッグラベル</h2>
+        <p class="hint">真ん中をケーブルに巻き、両端を貼り合わせて旗にします。ここを変えると左右の文字と目印を作り直します。</p>
+        <label class="row">ケーブルの太さ <select id="f-cable"></select></label>
+        <label class="row" id="f-dia-row">直径 <span class="inline"><input type="number" id="f-dia" min="1" max="40" step="0.5"> mm</span></label>
+        <label class="row">旗の長さ (片側) <span class="inline"><input type="number" id="f-flag" min="5" max="300" step="1"> mm</span></label>
+        <div class="seg" id="f-layout" role="group" aria-label="レイアウト"></div>
+        <label class="col">文字 (左の旗) <textarea id="f-textA" rows="2" spellcheck="false"></textarea></label>
+        <div class="insert-row" id="f-insertA"></div>
+        <label class="col" id="f-textB-row">文字 (右の旗) <textarea id="f-textB" rows="2" spellcheck="false"></textarea></label>
+        <div class="insert-row" id="f-insertB"></div>
+        <label class="row">書体 <select id="f-font"></select></label>
+        <label class="check"><input type="checkbox" id="f-bold"> 太字</label>
+        <div class="row"><span>目印</span><div class="seg" id="f-marks" role="group" aria-label="目印"></div></div>
+        <p id="f-info" class="hint"></p>
+        <button id="f-detach" class="ghost small" title="ひな形の設定を外し、普通のラベルとして自由に編集します">普通のラベルにする</button>
+      </section>
+
+      <!-- ラベル全体 -->
+      <section class="psec">
+        <h2>ラベル</h2>
+        <div class="seg" data-lkey="vertical" role="group" aria-label="テープの置き方">
+          <button data-val="false">横置き</button><button data-val="true">縦置き</button>
+        </div>
+        <label class="row">テープ幅 <select id="tape"></select></label>
+        <div class="seg" data-lkey="lengthMode" role="group" aria-label="長さ">
+          <button data-val="auto">長さ自動</button><button data-val="fixed">長さ固定</button>
+        </div>
+        <label class="row" id="row-length">ラベルの長さ
+          <span class="inline"><input type="number" id="lengthMm" min="10" max="3000" step="1"> mm</span></label>
+        <label class="row">前後の余白
+          <span class="inline"><input type="number" id="marginMm" min="0" max="50" step="0.5"> mm</span></label>
+        <button id="btn-clear" class="ghost small">このラベルを空にする</button>
+      </section>
+
+      <section class="psec">
+        <h2>連番・日付 <span class="hint">(このラベル)</span></h2>
+        <p class="hint">文字・コード・表に {連番1} や {日付1} と入れると、印刷するときに番号や日付に置き換わります。</p>
+        <div id="vars"></div>
+        <div class="row">
+          <button id="add-seq" class="small">＋ 連番</button>
+          <button id="add-date" class="small">＋ 日付</button>
+        </div>
+      </section>
+
+      <section class="psec">
+        <h2>印刷</h2>
+        <div class="seg" id="print-target" role="group" aria-label="印刷するラベル">
+          <button data-val="current">このラベル</button><button data-val="all">すべてのラベル</button>
+        </div>
+        <label class="row">部数 <span class="inline"><input type="number" id="copies" min="1" max="999" step="1"> 枚ずつ</span></label>
+        <p id="seq-range" class="hint" hidden></p>
+        <label class="row">濃度
+          <span class="inline"><input type="range" id="density" min="-5" max="5" step="1"><output id="density-out">0</output></span></label>
+        <button id="btn-print" class="primary">印刷</button>
+        <div id="job" class="job" hidden>
+          <div class="job-msg" id="job-msg"></div>
+          <progress id="job-bar" max="1" value="0"></progress>
+          <div class="row">
+            <button id="job-resume" class="small">続きから印刷</button>
+            <button id="job-cancel" class="small">中止</button>
+          </div>
+        </div>
+      </section>
+
+    </aside>
+  </main>
+
+  <dialog id="history" class="history">
+    <div class="history-head">
+      <h2>印刷履歴</h2>
+      <button id="history-close" class="ghost">閉じる</button>
+    </div>
+    <p class="hint">「もう一度印刷」は前回とまったく同じ内容で印刷します (連番も同じ番号)。「ラベルに追加」で編集に読み込めます。</p>
+    <ul id="history-list" class="history-list"></ul>
+  </dialog>
+
+  <!-- はじめの設定 -->
+  <dialog id="setup" class="dlg wizard">
+    <div class="dlg-head">
+      <h2>はじめの設定</h2>
+      <ol class="wz-steps">
+        <li data-step="1">はじめに</li><li data-step="2">ペアリング</li><li data-step="3">接続テスト</li><li data-step="4">完了</li>
+      </ol>
+    </div>
+
+    <section class="wz-page" data-page="1">
+      <p><strong>SR-MK1 for PC</strong> は、キングジムのラベルプリンタ「テプラ PRO SR-MK1」を
+        Windows パソコンから使うための<strong>非公式</strong>アプリです。</p>
+      <p>まず、パソコンとプリンタをつなぐ設定をします (3 分ほど)。始める前に、次の 3 つを確かめてください。</p>
+      <ul class="checklist">
+        <li>SR-MK1 の電源を入れ、テープカートリッジを入れておく</li>
+        <li>パソコンの Bluetooth をオンにする<br>
+          <span class="hint">Bluetooth が付いていないパソコンでは、USB の Bluetooth アダプタを使えます</span></li>
+        <li>スマホのアプリで SR-MK1 を使っていたら、スマホの Bluetooth をいったんオフにする<br>
+          <span class="hint">SR-MK1 は同時に 1 台としかつながりません</span></li>
+      </ul>
+    </section>
+
+    <section class="wz-page" data-page="2">
+      <div id="wz-found"></div>
+      <details id="wz-howto" class="howto">
+        <summary>SR-MK1 をパソコンにペアリングする方法</summary>
+        <ol>
+          <li><button id="wz-open-bt" class="small">Windows の Bluetooth の設定を開く</button></li>
+          <li>「デバイスの追加」を押し、「Bluetooth」を選ぶ</li>
+          <li>一覧に「SR-MK1」が出てきたら選ぶ<br>
+            <span class="hint">出てこないときは、SR-MK1 の電源を入れ直して少し待ってください</span></li>
+          <li>「接続済み」や「ペアリング済み」と出たら、この画面に戻って「もう一度探す」を押す</li>
+        </ol>
+      </details>
+      <div class="row">
+        <label class="check"><input type="checkbox" id="wz-all"> SR-MK1 以外の機器も表示する</label>
+        <button id="wz-rescan" class="small">もう一度探す</button>
+      </div>
+    </section>
+
+    <section class="wz-page" data-page="3">
+      <div id="wz-conn" class="result"></div>
+      <div id="wz-test" hidden>
+        <p>テスト用のラベルを 1 枚印刷して、ちゃんと出てくるか確かめられます (なくても次へ進めます)。</p>
+        <button id="wz-print">テスト印刷</button>
+        <p id="wz-print-msg" class="hint"></p>
+      </div>
+    </section>
+
+    <section class="wz-page" data-page="4">
+      <p class="big-ok">設定が終わりました</p>
+      <ul class="checklist">
+        <li>右上の表示が「接続中」なら、すぐに印刷できます</li>
+        <li>印刷したラベルの長さが少しずれるときは、「設定」→「寸法の補正」で合わせられます</li>
+        <li>プリンタを替えたときや、うまくつながらないときは「設定」から直せます</li>
+      </ul>
+    </section>
+
+    <div class="dlg-foot">
+      <button id="wz-later" class="ghost">あとで設定する</button>
+      <span class="grow"></span>
+      <button id="wz-back">戻る</button>
+      <button id="wz-next" class="primary">次へ</button>
+    </div>
+  </dialog>
+
+  <!-- 設定 -->
+  <dialog id="settings" class="dlg settings">
+    <div class="dlg-head">
+      <h2>設定</h2>
+      <button id="set-close" class="ghost">閉じる</button>
+    </div>
+    <div class="set-body">
+      <nav class="set-nav" id="set-nav">
+        <button data-tab="printer">プリンタ</button>
+        <button data-tab="calib">寸法の補正</button>
+        <button data-tab="screen">画面の実寸</button>
+        <button data-tab="help">困ったとき</button>
+        <button data-tab="about">このアプリについて</button>
+      </nav>
+
+      <section class="set-page" data-tab="printer">
+        <h3>使っているプリンタ</h3>
+        <p id="set-printer" class="big"></p>
+        <p id="set-printer-state" class="hint"></p>
+        <div class="row-left">
+          <button id="set-reselect">プリンタを選び直す</button>
+          <button id="set-open-bt" class="ghost">Windows の Bluetooth の設定</button>
+        </div>
+      </section>
+
+      <section class="set-page" data-tab="calib">
+        <h3>寸法の補正</h3>
+        <p>プリンタによって、印刷したラベルの長さがわずかにずれることがあります (100mm が 98mm になる、など)。
+          目盛りのラベルを印刷して測ると、そのずれを直せます。</p>
+        <p>今の補正: <strong id="calib-now"></strong></p>
+        <ol class="steps">
+          <li>目盛りのラベルを印刷する (長さ 約 11cm、補正なしで出ます)<br>
+            <button id="calib-print" class="small">目盛りのラベルを印刷</button></li>
+          <li>定規で 3 か所を測って入れる
+            <div class="ruler-fig" aria-hidden="true">
+              <span>ア</span><span class="rf-mid">0 ──── 目盛り ──── 100</span><span>ウ</span>
+            </div>
+            <div class="calib-grid">
+              <label>ア: ラベルの左端 〜 0 <span class="inline"><input type="number" id="calib-front" min="0" max="15" step="0.1" placeholder="5.0"> mm</span></label>
+              <label>イ: 目盛り 0 〜 100 <span class="inline"><input type="number" id="calib-scale" min="90" max="110" step="0.1" placeholder="100.0"> mm</span></label>
+              <label>ウ: 100 〜 ラベルの右端 <span class="inline"><input type="number" id="calib-back" min="0" max="15" step="0.1" placeholder="5.0"> mm</span></label>
+            </div>
+            <button id="calib-apply" class="small">この値で補正する</button></li>
+          <li>補正がうまくいったか、もう一度印刷して確かめる (イが 100mm、アとウが 5mm ならぴったり)<br>
+            <button id="calib-check" class="small">補正つきで目盛りを印刷</button></li>
+        </ol>
+        <p id="calib-msg" class="hint"></p>
+        <button id="calib-reset" class="ghost small">補正をやめる (元に戻す)</button>
+      </section>
+
+      <section class="set-page" data-tab="screen">
+        <h3>画面の実寸</h3>
+        <p>編集画面で「表示: 実寸」にしたとき、画面上の大きさが本物と同じになるように合わせます。
+          下のバーを定規で測り、長さを入れてください (100mm になるのが正解)。</p>
+        <div id="ruler-bar" class="ruler-bar"></div>
+        <div class="row-left">
+          <label>測った長さ <span class="inline"><input type="number" id="screenMeasured" min="20" max="400" step="0.5" value="100"> mm</span></label>
+          <button id="btn-screen">合わせる</button>
+        </div>
+      </section>
+
+      <section class="set-page" data-tab="help">
+        <h3>困ったとき</h3>
+        <dl class="faq">
+          <dt>「未接続」のまま変わらない</dt>
+          <dd>SR-MK1 の電源が入っているか、パソコンから離れすぎていないか確かめてください。
+            スマホのアプリがつながったままだと、パソコンからはつながりません (スマホの Bluetooth をオフに)。
+            それでもだめなら、SR-MK1 の電源を入れ直して「更新」を押してください。</dd>
+          <dt>印刷の途中で止まった</dt>
+          <dd>テープ切れやカバーの開きなど、表示された理由を直してから「続きから印刷」を押すと、止まったラベルから印刷し直します。</dd>
+          <dt>ラベルの長さが少し違う</dt>
+          <dd>「寸法の補正」で合わせられます。</dd>
+          <dt>プリンタが一覧に出てこない</dt>
+          <dd>先に Windows の Bluetooth の設定で SR-MK1 をペアリングしてください (「プリンタ」→「プリンタを選び直す」に手順があります)。</dd>
+        </dl>
+        <p>ここにないことは、<a href="#" id="help-faq">ホームページの「困ったとき」</a>をご覧ください。</p>
+        <h3>診断情報</h3>
+        <p class="hint">不具合は <a href="#" id="help-issues">GitHub の Issues</a> から知らせてください。そのときは、この内容を貼り付けてください。プリンタのアドレスは一部を伏せています。</p>
+        <textarea id="diag" rows="8" readonly spellcheck="false"></textarea>
+        <div class="row-left">
+          <button id="diag-copy">診断情報をコピー</button>
+          <button id="diag-logs" class="ghost">ログのフォルダを開く</button>
+        </div>
+      </section>
+
+      <section class="set-page" data-tab="about">
+        <h3 id="about-name">SR-MK1 for PC</h3>
+        <p>テプラ PRO SR-MK1 を Windows パソコンから Bluetooth で使うためのラベル作成アプリです。</p>
+        <div class="notice">
+          <p><strong>非公式のアプリです。</strong>株式会社キングジムとは関係がなく、キングジムが作ったり認めたりしたものではありません。
+            このアプリについて、キングジムへの問い合わせはしないでください。</p>
+          <p>「テプラ」「TEPRA」は株式会社キングジムの登録商標です。</p>
+          <p>このアプリは無保証です。使ったことで起きた不具合や損害 (プリンタやテープを含む) について、作者は責任を負いません。</p>
+        </div>
+        <div class="row-left">
+          <button id="about-home">ホームページ (GitHub)</button>
+          <button id="about-license" class="ghost">このアプリのライセンス (MIT)</button>
+        </div>
+        <h3>使っているソフトウェア</h3>
+        <ul class="licenses">
+          <li>Fabric.js 6.4.3 — MIT License</li>
+          <li>bwip-js 4.5.1 (Barcode Writer in Pure PostScript を含む) — MIT License</li>
+          <li>pywebview — BSD 3-Clause License</li>
+          <li>Pillow — MIT-CMU License</li>
+          <li>Python — Python Software Foundation License</li>
+          <li>Microsoft WebView2 SDK など — <a href="#" id="about-third">ライセンスの全文</a></li>
+        </ul>
+        <h3>参考にした資料</h3>
+        <p class="hint">プリンタとの通信の仕組みは、次の公開資料を参考にしました。</p>
+        <ul class="licenses">
+          <li><a href="https://github.com/nikachu2012/tepra_web" data-ext>nikachu2012/tepra_web</a></li>
+          <li><a href="https://github.com/takustaqu/labelbridge" data-ext>takustaqu/labelbridge</a></li>
+        </ul>
+      </section>
+    </div>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" hidden></div>
+
+  <script src="vendor/fabric-6.4.3.min.js"></script>
+  <script src="vendor/bwip-js-4.5.1.min.js"></script>
+  <script src="mock.js"></script>
+  <script src="vars.js"></script>
+  <script src="label.js"></script>
+  <script src="objects.js"></script>
+  <script src="editor.js"></script>
+  <script src="templates.js"></script>
+  <script src="doc.js"></script>
+  <script src="setup.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

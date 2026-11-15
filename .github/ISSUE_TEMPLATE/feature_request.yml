@@ -1,0 +1,11 @@
+name: 機能の要望
+description: こんな機能がほしい
+labels: ["要望"]
+body:
+  - type: textarea
+    id: want
+    attributes:
+      label: ほしい機能
+      description: どんなラベルを作りたくて、何に困っているかも書いてもらえると助かります。
+    validations:
+      required: true
